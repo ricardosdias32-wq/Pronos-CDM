@@ -1,11 +1,7 @@
 import streamlit as st
-import extra_streamlit_components as stx
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Prono Mundial - Playoffs", page_icon="⚽", layout="wide")
-
-# --- GERENCIADOR DE COOKIES (CORRIGIDO DEFINITIVAMENTE COM KEY ÚNICA) ---
-cookie_manager = stx.CookieManager(key="safe_cookies")
 
 # --- ESTILOS VISUAIS PERSONALIZADOS (CSS) ---
 st.markdown("""
@@ -36,20 +32,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- RECUPERAR COOKIES GUARDADOS ---
-cookie_email = cookie_manager.get(cookie="prono_user_email")
-cookie_sala = cookie_manager.get(cookie="prono_sala_code")
-
 # --- INITIALISATION SESSION STATE ---
 if "user_authenticated" not in st.session_state:
-    if cookie_email and cookie_sala == "LoungeCDM":
-        st.session_state.user_authenticated = True
-        st.session_state.user_email = cookie_email
-        st.session_state.is_admin = (cookie_email.lower() == "ricardosdias32@gmail.com")
-    else:
-        st.session_state.user_authenticated = False
-        st.session_state.user_email = ""
-        st.session_state.is_admin = False
+    st.session_state.user_authenticated = False
+    st.session_state.user_email = ""
+    st.session_state.is_admin = False
 
 # --- DETECTOR AUTOMÁTICO DE BANDEIRAS ---
 def get_flag(team_name):
@@ -97,16 +84,12 @@ if not st.session_state.user_authenticated:
     st.subheader("🔑 Entrar na Sala")
     col1, col2 = st.columns(2)
     with col1:
-        email = st.text_input("Teu endereço de Email")
+        email = st.text_input("Teu endereço de Email", key="login_email_unique")
     with col2: 
-        code_salle = st.text_input("Código da Sala (Ex: LoungeCDM)")
+        code_salle = st.text_input("Código da Sala (Ex: LoungeCDM)", key="login_sala_unique")
     
-    if st.button("🌟 Entrar e Apostar", use_container_width=True):
+    if st.button("🌟 Entrar e Apostar", key="btn_login_submit", use_container_width=True):
         if code_salle == "LoungeCDM" and email: 
-            # Grava os cookies no navegador por 30 dias
-            cookie_manager.set("prono_user_email", email, max_age=2592000)
-            cookie_manager.set("prono_sala_code", code_salle, max_age=2592000)
-            
             st.session_state.user_authenticated = True
             st.session_state.user_email = email
             if email.lower() == "ricardosdias32@gmail.com": 
@@ -122,9 +105,7 @@ else:
         st.sidebar.markdown("---")
         st.sidebar.error("👑 MODO ADMINISTRADOR ATIVO")
     
-    if st.sidebar.button("🚪 Terminar Sessão (Limpar Dados)", use_container_width=True):
-        cookie_manager.delete("prono_user_email")
-        cookie_manager.delete("prono_sala_code")
+    if st.sidebar.button("🚪 Terminar Sessão", key="btn_logout_sidebar", use_container_width=True):
         st.session_state.user_authenticated = False
         st.session_state.user_email = ""
         st.session_state.is_admin = False
@@ -134,12 +115,12 @@ else:
     if st.session_state.is_admin:
         st.markdown("<div class='admin-box'>", unsafe_allow_html=True)
         st.subheader("🛠️ Painel de Controlo do Administrador")
-        match_to_mod = st.selectbox("Escolha o Jogo para Atualizar Seleções:", list(st.session_state.matchs.keys()))
+        match_to_mod = st.selectbox("Escolha o Jogo para Atualizar Seleções:", list(st.session_state.matchs.keys()), key="admin_select_match")
         col_m1, col_m2 = st.columns(2)
-        with col_m1: t1 = st.text_input("Nova Seleção 1", st.session_state.matchs[match_to_mod]["team1"])
-        with col_m2: t2 = st.text_input("Nova Seleção 2", st.session_state.matchs[match_to_mod]["team2"])
+        with col_m1: t1 = st.text_input("Nova Seleção 1", st.session_state.matchs[match_to_mod]["team1"], key="admin_t1")
+        with col_m2: t2 = st.text_input("Nova Seleção 2", st.session_state.matchs[match_to_mod]["team2"], key="admin_t2")
             
-        if st.button("💾 Atualizar Equipas e Gerar Bandeiras", use_container_width=True):
+        if st.button("💾 Atualizar Equipas e Gerar Bandeiras", key="btn_admin_save", use_container_width=True):
             st.session_state.matchs[match_to_mod]["team1"] = t1
             st.session_state.matchs[match_to_mod]["flag1"] = get_flag(t1)
             st.session_state.matchs[match_to_mod]["team2"] = t2
