@@ -1,18 +1,28 @@
 import streamlit as st
+import unicodedata
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Prono Mondial 2026", page_icon="🏆", layout="wide")
+# --- CONFIGURAÇÃO E DESIGN ---
+st.set_page_config(page_title="Mundial 2026 PRO", page_icon="🏆", layout="wide")
 
-# --- ESTILOS ---
 st.markdown("""
     <style>
-    .main { background-color: #0f172a; color: white; }
-    .stButton>button { width: 100%; border-radius: 10px; font-weight: bold; }
-    .card { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #3b82f6; }
+    .stApp { background-color: #050505; color: #ffffff; }
+    .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border-left: 5px solid #ffcc00; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .title-text { color: #ffcc00; font-weight: 800; font-size: 2.5rem; text-align: center; }
+    .btn-desistir { background-color: #ff4b4b !important; color: white !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DICIONÁRIO DE BANDEIRAS E SELEÇÕES ---
+# --- DADOS ---
+LISTA_SELECOES = [
+    "Mexico", "Africa do Sul", "Coreia do Sul", "Republica Checa", "Suica", "Canada", "Bosnia", "Qatar",
+    "Brasil", "Marrocos", "Escocia", "Haiti", "EUA", "Australia", "Turquia", "Paraguai",
+    "Alemanha", "Costa do Marfim", "Ecuador", "Curacao", "Paises Baixos", "Japao", "Suecia", "Tunisia",
+    "Belgica", "Egipto", "Irao", "Nova Zelandia", "Espanha", "Cabo Verde", "Uruguai", "Arabia Saudita",
+    "Franca", "Noruega", "Senegal", "Iraque", "Argentina", "Austria", "Argelia", "Jordania",
+    "Colombia", "Portugal", "Congo", "Uzbequistao", "Inglaterra", "Croacia", "Gana", "Panama"
+]
+
 def get_flag(team_name):
     drapeaux = {
         "mexico": "🇲🇽", "africa do sul": "🇿🇦", "coreia do sul": "🇰🇷", "republica checa": "🇨🇿",
@@ -28,52 +38,50 @@ def get_flag(team_name):
         "colombia": "🇨🇴", "portugal": "🇵🇹", "congo": "🇨🇬", "uzbequistao": "🇺🇿",
         "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "croacia": "🇭🇷", "gana": "🇬🇭", "panama": "🇵🇦"
     }
-    return drapeaux.get(team_name.lower().strip(), "🏳️")
+    key = "".join(c for c in unicodedata.normalize('NFD', str(team_name).strip().lower()) if unicodedata.category(c) != 'Mn')
+    return drapeaux.get(key, "🏳️")
 
-# --- ESTADO DA SESSÃO ---
-if "user_authenticated" not in st.session_state:
-    st.session_state.user_authenticated = False
-    st.session_state.user_nickname = ""
+# --- ESTADO ---
+if "user" not in st.session_state: st.session_state.user = None
+if "matchs" not in st.session_state:
+    st.session_state.matchs = {f"16es - Match {i}": {"team1": "Mexico", "team2": "Brasil"} for i in range(1, 17)}
 
-# --- LÓGICA DE LOGIN ---
-if not st.session_state.user_authenticated:
-    st.title("🏆 Login - Mundial 2026")
-    email = st.text_input("Email")
-    nickname = st.text_input("Nickname")
-    if st.button("Entrar no Jogo"):
-        if email and nickname:
-            st.session_state.user_authenticated = True
-            st.session_state.user_nickname = nickname
+# --- INTERFACE ---
+if not st.session_state.user:
+    st.markdown("<h1 class='title-text'>🏆 MUNDIAL 2026</h1>", unsafe_allow_html=True)
+    nickname = st.text_input("Escolhe o teu Nickname")
+    if st.button("ENTRAR NO TORNEIO"):
+        if nickname:
+            st.session_state.user = nickname
             st.rerun()
 else:
-    # --- INTERFACE PRINCIPAL ---
-    st.sidebar.markdown(f"### 👤 {st.session_state.user_nickname}")
-    
-    # Botão de Desistir
-    if st.sidebar.button("⚠️ Desistir / Sair"):
-        st.session_state.user_authenticated = False
+    # Sidebar com botão de desistência estilo "Delete"
+    st.sidebar.title(f"Bem-vindo, {st.session_state.user}")
+    if st.sidebar.button("❌ DESISTIR DO GRUPO", type="primary"):
+        st.session_state.user = None
         st.rerun()
+
+    tab1, tab2 = st.tabs(["⚽ JOGOS 16-AVOS", "🛠️ CONFIGURAR"])
     
-    st.title("⚽ Mundial 2026 - Painel")
-    
-    # Exemplo de listagem dos grupos conforme definiste
-    grupos = {
-        "Grupo 1": ["Mexico", "Africa do Sul", "Coreia do Sul", "Republica Checa"],
-        "Grupo 2": ["Suica", "Canada", "Bosnia", "Qatar"],
-        "Grupo 3": ["Brasil", "Marrocos", "Escocia", "Haiti"],
-        "Grupo 4": ["EUA", "Australia", "Turquia", "Paraguai"],
-        "Grupo 5": ["Alemanha", "Costa do Marfim", "Ecuador", "Curacao"],
-        "Grupo 6": ["Paises Baixos", "Japao", "Suecia", "Tunisia"],
-        "Grupo 7": ["Belgica", "Egipto", "Irao", "Nova Zelandia"],
-        "Grupo 8": ["Espanha", "Cabo Verde", "Uruguai", "Arabia Saudita"],
-        "Grupo 9": ["Franca", "Noruega", "Senegal", "Iraque"],
-        "Grupo 10": ["Argentina", "Austria", "Argelia", "Jordania"],
-        "Grupo 11": ["Colombia", "Portugal", "Congo", "Uzbequistao"],
-        "Grupo 12": ["Inglaterra", "Croacia", "Gana", "Panama"]
-    }
-    
-    for nome_grupo, equipas in grupos.items():
-        with st.expander(f"🔹 {nome_grupo}"):
-            cols = st.columns(4)
-            for i, equipa in enumerate(equipas):
-                cols[i].markdown(f"<div class='card'>{get_flag(equipa)} {equipa}</div>", unsafe_allow_html=True)
+    with tab1:
+        st.header("📋 Calendário Oficial")
+        for m_id, data in st.session_state.matchs.items():
+            st.markdown(f"""
+            <div class='card'>
+                <h3 style='color:#ffcc00;'>{m_id}</h3>
+                <div style='display:flex; justify-content:space-between; align-items:center;'>
+                    <span>{get_flag(data['team1'])} {data['team1']}</span>
+                    <b>VS</b>
+                    <span>{get_flag(data['team2'])} {data['team2']}</span>
+                </div>
+            </div>""", unsafe_html=True)
+            
+    with tab2:
+        if st.session_state.user: # Apenas admin teria acesso real, aqui simplificado
+            st.header("⚙️ Editor de Jogos")
+            m_sel = st.selectbox("Escolher Jogo", list(st.session_state.matchs.keys()))
+            t1 = st.selectbox("Equipa 1", LISTA_SELECOES, index=LISTA_SELECOES.index(st.session_state.matchs[m_sel]['team1']))
+            t2 = st.selectbox("Equipa 2", LISTA_SELECOES, index=LISTA_SELECOES.index(st.session_state.matchs[m_sel]['team2']))
+            if st.button("Guardar Alterações"):
+                st.session_state.matchs[m_sel] = {"team1": t1, "team2": t2}
+                st.rerun()
