@@ -4,8 +4,8 @@ import extra_streamlit_components as stx
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Prono Mundial - Playoffs", page_icon="⚽", layout="wide")
 
-# --- GERENCIADOR DE COOKIES (CORRIGIDO SEM CACHE PARA EVITAR O ERRO) ---
-cookie_manager = stx.CookieManager()
+# --- GERENCIADOR DE COOKIES (CORRIGIDO DEFINITIVAMENTE COM KEY ÚNICA) ---
+cookie_manager = stx.CookieManager(key="safe_cookies")
 
 # --- ESTILOS VISUAIS PERSONALIZADOS (CSS) ---
 st.markdown("""
