@@ -44,10 +44,10 @@ def get_flag(team_name):
         "allemagne": "🇩🇪", "alemanha": "🇩🇪", "paraguay": "🇵🇾", "france": "🇫🇷", "frança": "🇫🇷", 
         "suède": "🇸🇪", "suede": "🇸🇪", "suécia": "🇸🇪", "afrique du sud": "🇿🇦", "afrika do sul": "🇿🇦", 
         "canada": "🇨🇦", "canadá": "🇨🇦", "pays-bas": "🇳🇱", "paises baixos": "🇳🇱", "maroc": "🇲🇦", "marrocos": "🇲🇦",
-        "croatie": "🇭🇷", "croácia": "🇭🇷", "espagne": "🇪🇸", "espanha": "🇪🇸", "usa": "🇺🇸", "états-unis": "🇺🇸", eua: "🇺🇸",
+        "croatie": "🇭🇷", "croácia": "🇭🇷", "espagne": "🇪🇸", "espanha": "🇪🇸", "usa": "🇺🇸", "états-unis": "🇺🇸", "eua": "🇺🇸",
         "bosnie": "🇧🇦", "bósnia": "🇧🇦", "belgique": "🇧🇪", "bélgica": "🇧🇪", "brésil": "🇧🇷", "brasil": "🇧🇷", 
         "japon": "🇯🇵", "japão": "🇯🇵", "côte d'ivoire": "🇨🇮", "norvège": "🇳🇴", "noruega": "🇳🇴", 
-        "mexique": "🇲🇽", "méxico": "🇲🇽", "équateur": "🇪🇨", "equador": "🇪🇨", "angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+        "mexique": "🇲🇽", "méxico": "🇲🇽", "équateur": "🇪🇨", "equador": "🇪🇨", "angleterre": "🏴󠁧󠁢󠁥󠁮ッグ󠁿", "inglaterra": "🏴󠁧󠁢󠁥󠁮ッグ󠁿",
         "argentine": "🇦🇷", "argentina": "🇦🇷", "cap-vert": "🇨🇻", "cabo verde": "🇨🇻", "australie": "🇦🇺", "austrália": "🇦🇺",
         "égypte": "🇪🇬", "egito": "🇪🇬", "suisse": "🇨🇭", "suiça": "🇨🇭", "ghana": "🇬🇭", "gana": "🇬🇭",
         "colombie": "🇨🇴", "colômbia": "🇨🇴", "portugal": "🇵🇹"
@@ -68,7 +68,7 @@ if "matchs" not in st.session_state:
         "16es - Match 9": {"team1": "Brésil", "flag1": "🇧🇷", "team2": "Japon", "flag2": "🇯🇵", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
         "16es - Match 10": {"team1": "Côte d'Ivoire", "flag1": "🇨🇮", "team2": "Norvège", "flag2": "🇳🇴", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
         "16es - Match 11": {"team1": "Mexique", "flag1": "🇲🇽", "team2": "Équateur", "flag2": "🇪🇨", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
-        "16es - Match 12": {"team1": "Angleterre", "flag1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
+        "16es - Match 12": {"team1": "Angleterre", "flag1": "🏴󠁧󠁢󠁥󠁮ッグ󠁿", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
         "16es - Match 13": {"team1": "Argentine", "flag1": "🇦🇷", "team2": "Cap-Vert", "flag2": "🇨🇻", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
         "16es - Match 14": {"team1": "Australie", "flag1": "🇦🇺", "team2": "Égypte", "flag2": "🇪🇬", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
         "16es - Match 15": {"team1": "Suisse", "flag1": "🇨🇭", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "", "termine": False},
@@ -205,7 +205,6 @@ else:
         if not classement_data:
             st.info("Aucun point n'a encore été distribué. Les matchs doivent être terminés par l'Admin.")
         else:
-            # Création d'un tableau propre pour le classement
             st.markdown("<table style='width:100%; border-collapse: collapse; text-align:left;'>", unsafe_allow_html=True)
             st.markdown("<tr style='background-color:#1e293b; color:white;'><th>Rang</th><th>Joueur</th><th>Points Régalés</th></tr>", unsafe_allow_html=True)
             
@@ -216,10 +215,12 @@ else:
             
             st.markdown("</table>", unsafe_allow_html=True)
 
-    # --- SECTION 3: ZONE ADMIN ---
+    # --- SECTION 3: ZONE ADMIN (CORRIGÉE CI-DESSOUS) ---
     elif choix_menu == "🛠️ Zone Admin (Résultats)" and st.session_state.is_admin:
         st.markdown("<div class='admin-box'>", unsafe_allow_html=True)
-        st.h1("🛠️ Panneau de Contrôle Administrateur")
+        
+        # CORREÇÃO DAQUI: st.title em vez de st.h1
+        st.title("🛠️ Panneau de Contrôle Administrateur")
         
         opcao_admin = st.radio("Action à réaliser :", ["Modifier l'affiche d'un match", "Enregistrer un Résultat Réel"], horizontal=True, key="admin_mode_choice")
         
@@ -244,7 +245,6 @@ else:
             with col_r1: res1 = st.number_input(f"Buts pour {st.session_state.matchs[match_to_mod]['team1']}", min_value=0, step=1, value=int(st.session_state.matchs[match_to_mod]["score1_reel"]), key="admin_res1")
             with col_r2: res2 = st.number_input(f"Buts pour {st.session_state.matchs[match_to_mod]['team2']}", min_value=0, step=1, value=int(st.session_state.matchs[match_to_mod]["score2_reel"]), key="admin_res2")
             
-            # Sélectionner le qualifié réel en cas de match nul (Prolongations/Tirs au but)
             options_qualifie_reel = [st.session_state.matchs[match_to_mod]['team1'], st.session_state.matchs[match_to_mod]['team2']]
             index_defaut = 0 if st.session_state.matchs[match_to_mod]["qualifie_reel"] == options_qualifie_reel[0] else 1
             qualifie_reel_input = st.radio("Qui s'est officiellement qualifié ?", options_qualifie_reel, index=index_defaut, key="admin_qual_reel")
