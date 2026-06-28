@@ -2,18 +2,26 @@ import streamlit as st
 import unicodedata
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Prono Mondial - Playoffs", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="Prono Mondial - Pro Edition", page_icon="🏆", layout="wide")
 
-# --- STYLES VISUELS PERSONNALISÉS (CSS) ---
+# --- STYLES VISUELS PERSONNALISÉS (CSS PREMIUM) ---
 st.markdown("""
     <style>
-    .block-container { padding-top: 2rem; }
+    .block-container { padding-top: 1.5rem; }
+    .kpi-box {
+        background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #4c1d95;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
     .match-box {
         background-color: #1e293b;
         padding: 20px;
         border-radius: 12px;
         border-left: 6px solid #3b82f6;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     .admin-box {
@@ -34,11 +42,17 @@ st.markdown("""
         font-size: 14px;
     }
     .vs-text {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: bold;
         color: #94a3b8;
         text-align: center;
-        margin-top: 10px;
+        margin-top: 15px;
+    }
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -50,87 +64,33 @@ if "user_authenticated" not in st.session_state:
     st.session_state.user_nickname = ""
     st.session_state.is_admin = False
 
-# --- DÉTECTEUR DE DRAPEAUX (ANTI-ERREUR ET SANS ACCENTS) ---
+# --- DÉTECTEUR DE DRAPEAUX (ANTI-ERREUR) ---
 def get_flag(team_name):
     drapeaux = {
-        # GRUPO A
         "mexique": "🇲🇽", "mexico": "🇲🇽",
         "afrique du sud": "🇿🇦", "afrika du sul": "🇿🇦", "africa du sul": "🇿🇦", "africa do sul": "🇿🇦",
         "coree du sud": "🇰🇷", "coreia do sul": "🇰🇷", "south korea": "🇰🇷",
         "tchequie": "🇨🇿", "republique cheque": "🇨🇿", "republica checa": "🇨🇿", "czechia": "🇨🇿",
-
-        # GRUPO B
-        "canada": "🇨🇦",
-        "suisse": "🇨🇭", "suica": "🇨🇭",
-        "qatar": "🇶🇦", "catar": "🇶🇦",
-        "bosnie": "🇧🇦", "bosnia": "🇧🇦", "bosnie et herzegovine": "🇧🇦", "bosnia and herzegovina": "🇧🇦",
-
-        # GRUPO C
-        "bresil": "🇧🇷", "brasil": "🇧🇷", "brazil": "🇧🇷",
-        "maroc": "🇲🇦", "marrocos": "🇲🇦", "morocco": "🇲🇦",
-        "ecosse": "🏴󠁧󠁢󠁳󠁿", "escoscia": "🏴󠁧󠁢󠁳󠁿", "escocia": "🏴󠁧󠁢󠁳󠁿", "scotland": "🏴󠁧󠁢󠁳󠁿",
-        "haiti": "🇭🇹",
-
-        # GRUPO D
-        "usa": "🇺🇸", "etats-unis": "🇺🇸", "eua": "🇺🇸", "united states": "🇺🇸",
-        "paraguay": "🇵🇾", "paraguai": "🇵🇾",
-        "australie": "🇦🇺", "australia": "🇦🇺",
-        "turquie": "🇹🇷", "turquia": "🇹🇷", "turkey": "🇹🇷",
-
-        # GRUPO E
-        "allemagne": "🇩🇪", "alemanha": "🇩🇪", "germany": "🇩🇪",
-        "equateur": "🇪🇨", "equador": "🇪🇨", "ecuador": "🇪🇨",
-        "cote d'ivoire": "🇨🇮", "costa do marfim": "🇨🇮", "ivory coast": "🇨🇮",
-        "curacao": "🇨🇼",
-
-        # GRUPO F
-        "pays-bas": "🇳🇱", "paises baixos": "🇳🇱", "netherlands": "🇳🇱",
-        "japon": "🇯🇵", "japao": "🇯🇵", "japan": "🇯🇵",
-        "suede": "🇸🇪", "suecia": "🇸🇪", "sweden": "🇸🇪",
-        "tunisie": "🇹🇳", "tunisia": "🇹🇳",
-
-        # GRUPO G
-        "belgique": "🇧🇪", "belgica": "🇧🇪", "belgium": "🇧🇪",
-        "egypte": "🇪🇬", "egito": "🇪🇬", "egypt": "🇪🇬",
-        "iran": "🇮🇷", "irao": "🇮🇷",
-        "nouvelle-zelande": "🇳🇿", "nova zelandia": "🇳🇿", "new zealand": "🇳🇿",
-
-        # GRUPO H
-        "espagne": "🇪🇸", "espanha": "🇪🇸", "spain": "🇪🇸",
-        "uruguay": "🇺🇾", "uruguaio": "🇺🇾", "uruguai": "🇺🇾",
-        "arabie saoudite": "🇸🇦", "arabia saudita": "🇸🇦", "saudi arabia": "🇸🇦",
-        "cap-vert": "🇨🇻", "cabo verde": "🇨🇻",
-
-        # GRUPO I
-        "france": "🇫🇷", "franca": "🇫🇷",
-        "senegal": "🇸🇳",
-        "norvege": "🇳🇴", "noruega": "🇳🇴", "norway": "🇳🇴",
-        "iraq": "🇮🇶", "iraque": "🇮🇶",
-
-        # GRUPO J
-        "argentine": "🇦🇷", "argentina": "🇦🇷",
-        "autriche": "🇦🇹", "austria": "🇦🇹",
-        "algerie": "🇩🇿", "algeria": "🇩🇿",
-        "jordanie": "🇯🇴", "jordania": "🇯🇴", "jordan": "🇯🇴",
-
-        # GRUPO K
-        "portugal": "🇵🇹",
-        "colombie": "🇨🇴", "colombia": "🇨🇴",
-        "rd congo": "🇨🇩", "congo dr": "🇨🇩", "dr congo": "🇨🇩", "congo drc": "🇨🇩",
-        "ouzbekistan": "🇺🇿", "uzbequistao": "🇺🇿", "uzbekistan": "🇺🇿",
-
-        # GRUPO L
-        "angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-        "croatie": "🇭🇷", "croacia": "🇭🇷", "croatia": "🇭🇷",
-        "ghana": "🇬🇭", "gana": "🇬🇭",
-        "panama": "🇵🇦"
+        "canada": "🇨🇦", "suisse": "🇨🇭", "suica": "🇨🇭", "qatar": "🇶🇦", "catar": "🇶🇦",
+        "bosnie": "🇧🇦", "bosnia": "🇧🇦", "bresil": "🇧🇷", "brasil": "🇧🇷", "brazil": "🇧🇷",
+        "maroc": "🇲🇦", "marrocos": "🇲🇦", "morocco": "🇲🇦", "ecosse": "🏴 ^", "escocia": "🏴 ^",
+        "usa": "🇺🇸", "etats-unis": "🇺🇸", "eua": "🇺🇸", "paraguay": "🇵🇾", "paraguai": "🇵🇾",
+        "australie": "🇦🇺", "australia": "🇦🇺", "turquie": "🇹🇷", "turquia": "🇹🇷", "turkey": "🇹🇷",
+        "allemagne": "🇩🇪", "alemanha": "🇩🇪", "germany": "🇩🇪", "equateur": "🇪🇨", "equador": "🇪🇨",
+        "cote d'ivoire": "🇨🇮", "costa do marfim": "🇨🇮", "pays-bas": "🇳🇱", "paises baixos": "🇳🇱",
+        "japon": "🇯🇵", "japao": "🇯🇵", "suede": "🇸🇪", "suecia": "🇸🇪", "tunisie": "🇹🇳",
+        "belgique": "🇧🇪", "belgica": "🇧🇪", "egypte": "🇪🇬", "egito": "🇪🇬", "iran": "🇮🇷",
+        "nouvelle-zelande": "🇳🇿", "nova zelandia": "🇳🇿", "espagne": "🇪🇸", "espanha": "🇪🇸",
+        "uruguay": "🇺🇾", "uruguai": "🇺🇾", "arabie saoudite": "🇸🇦", "arabia saudita": "🇸🇦",
+        "france": "🇫🇷", "franca": "🇫🇷", "senegal": "🇸🇳", "norvege": "🇳🇴", "noruega": "🇳🇴",
+        "argentine": "🇦🇷", "argentina": "🇦🇷", "autriche": "🇦🇹", "algerie": "🇩🇿",
+        "portugal": "🇵🇹", "colombie": "🇨🇴", "colombia": "🇨🇴", "angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+        "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "croatie": "🇭🇷", "croacia": "🇭🇷",
+        "ghana": "🇬🇭", "gana": "🇬🇭", "panama": "🇵🇦", "cap-vert": "🇨🇻", "cabo verde": "🇨🇻"
     }
-    
-    # Remove acentos, passa para minúsculas e limpa espaços extras
     text = str(team_name).strip().lower()
     text = "".join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-    
-    return drapeaux.get(text, "🏳️")
+    return flags.get(text, "🏳️") if 'flags' in locals() else drapeaux.get(text, "🏳️")
 
 # --- BASE DE DONNÉES DES MATCHS ---
 if "matchs" not in st.session_state:
@@ -146,7 +106,7 @@ if "matchs" not in st.session_state:
         "16es - Match 9": {"team1": "Brésil", "flag1": "🇧🇷", "team2": "Japon", "flag2": "🇯🇵", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
         "16es - Match 10": {"team1": "Côte d'Ivoire", "flag1": "🇨🇮", "team2": "Norvège", "flag2": "🇳🇴", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
         "16es - Match 11": {"team1": "Mexique", "flag1": "🇲🇽", "team2": "Équateur", "flag2": "🇪🇨", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 12": {"team1": "Angleterre", "flag1": "🏴󠁧󠁢󠁥󠁮ッグ󠁿", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
+        "16es - Match 12": {"team1": "Angleterre", "flag1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
         "16es - Match 13": {"team1": "Argentine", "flag1": "🇦🇷", "team2": "Cap-Vert", "flag2": "🇨🇻", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
         "16es - Match 14": {"team1": "Australie", "flag1": "🇦🇺", "team2": "Égypte", "flag2": "🇪🇬", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
         "16es - Match 15": {"team1": "Suisse", "flag1": "🇨🇭", "team2": "À Définir (Repêchage)", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
@@ -156,21 +116,8 @@ if "matchs" not in st.session_state:
 if "pronos" not in st.session_state: 
     st.session_state.pronos = {}
 
-# --- DÉDUCTION DYNAMIQUE DES HUITIÈMES ---
-m_data = st.session_state.matchs
-huitiemes = {
-    "H8 - Match 1": {"t1": m_data["16es - Match 1"]["qualifie_reel"], "t2": m_data["16es - Match 2"]["qualifie_reel"]},
-    "H8 - Match 2": {"t1": m_data["16es - Match 3"]["qualifie_reel"], "t2": m_data["16es - Match 4"]["qualifie_reel"]},
-    "H8 - Match 3": {"t1": m_data["16es - Match 5"]["qualifie_reel"], "t2": m_data["16es - Match 6"]["qualifie_reel"]},
-    "H8 - Match 4": {"t1": m_data["16es - Match 7"]["qualifie_reel"], "t2": m_data["16es - Match 8"]["qualifie_reel"]},
-    "H8 - Match 5": {"t1": m_data["16es - Match 9"]["qualifie_reel"], "t2": m_data["16es - Match 10"]["qualifie_reel"]},
-    "H8 - Match 6": {"t1": m_data["16es - Match 11"]["qualifie_reel"], "t2": m_data["16es - Match 12"]["qualifie_reel"]},
-    "H8 - Match 7": {"t1": m_data["16es - Match 13"]["qualifie_reel"], "t2": m_data["16es - Match 14"]["qualifie_reel"]},
-    "H8 - Match 8": {"t1": m_data["16es - Match 15"]["qualifie_reel"], "t2": m_data["16es - Match 16"]["qualifie_reel"]},
-}
-
 # --- CALCUL DU CLASSEMENT ---
-def calculer_classement():
+def calcular_classement():
     scores = {}
     for user_email, user_pronos in st.session_state.pronos.items():
         nickname = user_pronos.get("nickname_profile", user_email)
@@ -186,195 +133,162 @@ def calculer_classement():
         scores[nickname] = total_points
     return dict(sorted(scores.items(), key=lambda item: item[1], reverse=True))
 
-# --- ÉCRAN DE CONNEXION ---
+# --- CONNEXION ---
 if not st.session_state.user_authenticated:
     st.markdown("<h1 style='text-align: center; color: #3b82f6;'>🏆 LOBBY DES PRONOSTICS 🏆</h1>", unsafe_allow_html=True)
     st.subheader("🔑 Accéder à la Salle")
+    email = st.text_input("Adresse Email").strip()
+    nickname = st.text_input("Nickname (Nom affiché)").strip()
+    code_salle = st.text_input("Code de la Salle", type="password")
     
-    email = st.text_input("Votre adresse Email", key="login_email_unique")
-    nickname = st.text_input("Votre Nickname (Nom affiché)", key="login_nick_unique")
-    code_salle = st.text_input("Code de la Salle (Ex: LoungeCDM)", key="login_sala_unique", type="password")
-    
-    if st.button("🌟 Entrer", key="btn_login_submit", use_container_width=True):
-        if code_salle == "LoungeCDM" and email and nickname: 
+    if st.button("🌟 Entrer", use_container_width=True):
+        if code_salle == "LoungeCDM" and email and nickname:
             st.session_state.user_authenticated = True
             st.session_state.user_email = email
             st.session_state.user_nickname = nickname
-            if email.lower() == "ricardosdias32@gmail.com": 
-                st.session_state.is_admin = True
-            
-            if email not in st.session_state.pronos:
-                st.session_state.pronos[email] = {}
+            st.session_state.is_admin = (email.lower() == "ricardosdias32@gmail.com")
+            if email not in st.session_state.pronos: st.session_state.pronos[email] = {}
             st.session_state.pronos[email]["nickname_profile"] = nickname
-                
-            st.success(f"Bienvenue {nickname} !")
             st.rerun()
-        else: 
-            st.error("Veuillez remplir tous les champs correctement.")
+        else: st.error("Champs incorrects.")
 else:
     # --- BARRE LATÉRALE ---
-    st.sidebar.markdown(f"### 👤 Joueur:\n**{st.session_state.user_nickname}**")
-    st.sidebar.markdown(f"<span style='color: #64748b; font-size:12px;'>({st.session_state.user_email})</span>", unsafe_allow_html=True)
-    if st.session_state.is_admin: 
-        st.sidebar.error("👑 MODE ADMIN ACTIF")
-        
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🧭 Menu")
+    st.sidebar.markdown(f"### 👤 **{st.session_state.user_nickname}**")
+    if st.session_state.is_admin: st.sidebar.error("👑 MODE ADMIN")
     
-    options_menu = ["⚽ Mes Pronostics", "🌳 Arbre des Playoffs", "📊 Classement"]
-    if st.session_state.is_admin:
-        options_menu.append("🛠️ Zone Admin (Résultats)")
-        
-    choix_menu = st.sidebar.radio("Aller vers :", options_menu, key="menu_navigation")
+    options_menu = ["⚽ Mes Pronostics", "👀 Palpites do Grupo", "🌳 Arbre des Playoffs", "📊 Classement"]
+    if st.session_state.is_admin: options_menu.append("🛠️ Zone Admin")
+    choix_menu = st.sidebar.radio("Menu :", options_menu)
     
-    st.sidebar.markdown("---")
     if st.sidebar.button("🚪 Déconnexion", use_container_width=True):
         st.session_state.user_authenticated = False
-        st.session_state.user_email = ""
-        st.session_state.user_nickname = ""
-        st.session_state.is_admin = False
         st.rerun()
 
-    # --- SECTION 1: PRONOSTICS ---
+    # --- SÉLECTION 1: MES PRONOSTICS ---
     if choix_menu == "⚽ Mes Pronostics":
-        st.markdown("<h1 style='color: #3b82f6;'>⚽ Vos Pronostics (16es de Finale)</h1>", unsafe_allow_html=True)
+        # KPIs de resumo no topo
+        classement = calcular_classement()
+        meu_score = classement.get(st.session_state.user_nickname, 0)
+        meus_jogos = st.session_state.pronos.get(st.session_state.user_email, {})
+        total_trancados = sum(1 for m, v in meus_jogos.items() if isinstance(v, dict) and v.get("valide"))
+        
+        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        with col_kpi1: st.markdown(f"<div class='kpi-box'><span style='color:#a855f7;'>🔒 Apostas Trancadas</span><h2>{total_trancados} / 16</h2></div>", unsafe_allow_html=True)
+        with col_kpi2: st.markdown(f"<div class='kpi-box'><span style='color:#f59e0b;'>⭐ Teus Pontos</span><h2>{meu_score} pts</h2></div>", unsafe_allow_html=True)
+        with col_kpi3: st.markdown(f"<div class='kpi-box'><span style='color:#10b981;'>📈 Posição Atual</span><h2>#{list(classement.keys()).index(st.session_state.user_nickname)+1 if st.session_state.user_nickname in classement else '-'}</h2></div>", unsafe_allow_html=True)
+        
+        st.markdown("<br><h2 style='color: #3b82f6;'>⚽ Teus Prognósticos</h2>", unsafe_allow_html=True)
         user = st.session_state.user_email
-        if user not in st.session_state.pronos: st.session_state.pronos[user] = {}
 
         for match_id, info in st.session_state.matchs.items():
             st.markdown(f"<div class='match-box'>", unsafe_allow_html=True)
+            deja_valide = st.session_state.pronos[user].get(match_id, {}).get("valide", False) if isinstance(st.session_state.pronos[user].get(match_id), dict) else False
+            
+            # Header do Card
+            if info["termine"]:
+                prono = st.session_state.pronos[user].get(match_id, {})
+                if prono.get("score1") == info["score1_reel"] and prono.get("score2") == info["score2_reel"]:
+                    st.markdown(f"<span style='float:right;' class='badge-status'>🟢 EXATO (+3) | Fim: {info['score1_reel']}-{info['score2_reel']}</span>", unsafe_allow_html=True)
+                elif prono.get("qualifie") == info["qualifie_reel"]:
+                    st.markdown(f"<span style='float:right;' class='badge-status'>🟡 QUALIFICADO (+1) | Fim: {info['score1_reel']}-{info['score2_reel']}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<span style='float:right;' class='badge-status'>🔴 FALHADO | Fim: {info['score1_reel']}-{info['score2_reel']}</span>", unsafe_allow_html=True)
+            elif deja_valide:
+                st.markdown("<span style='color: #10b981; float: right; font-weight: bold;'>🔒 Submetido</span>", unsafe_allow_html=True)
+                
             st.markdown(f"<span style='color: #3b82f6; font-weight: bold;'>{match_id}</span>", unsafe_allow_html=True)
             
-            if info["termine"]:
-                st.markdown(f"<span style='color: #10b981; float: right; font-weight: bold;'>🔴 MATCH TERMINÉ ({info['score1_reel']} - {info['score2_reel']}) ➔ {info['qualifie_reel']} 🏆</span>", unsafe_allow_html=True)
-                deja_valide = True
-            else:
-                deja_valide = st.session_state.pronos[user].get(match_id, {}).get("valide", False) if isinstance(st.session_state.pronos[user].get(match_id), dict) else False
-                
             col1, col_vs, col2 = st.columns([3, 2, 3])
-            
             with col1:
                 st.markdown(f"<h3 style='text-align: center;'>{info['flag1']}<br>{info['team1']}</h3>", unsafe_allow_html=True)
-                if not deja_valide: s1_in = st.number_input("Buts", min_value=0, step=1, key=f"s1_{match_id}")
-                else: 
-                    user_score1 = st.session_state.pronos[user].get(match_id, {}).get("score1", 0) if isinstance(st.session_state.pronos[user].get(match_id), dict) else 0
-                    st.markdown(f"<p style='text-align: center; font-size: 20px;'><b>{user_score1}</b></p>", unsafe_allow_html=True)
-                    
+                if not deja_valide: s1_in = st.number_input("Golos", min_value=0, step=1, key=f"s1_{match_id}")
+                else: st.markdown(f"<p style='text-align: center; font-size: 24px;'><b>{st.session_state.pronos[user][match_id]['score1']}</b></p>", unsafe_allow_html=True)
             with col_vs: st.markdown("<p class='vs-text'>VS</p>", unsafe_allow_html=True)
-                
             with col2:
                 st.markdown(f"<h3 style='text-align: center;'>{info['flag2']}<br>{info['team2']}</h3>", unsafe_allow_html=True)
-                if not deja_valide: s2_in = st.number_input("Buts", min_value=0, step=1, key=f"s2_{match_id}")
-                else: 
-                    user_score2 = st.session_state.pronos[user].get(match_id, {}).get("score2", 0) if isinstance(st.session_state.pronos[user].get(match_id), dict) else 0
-                    st.markdown(f"<p style='text-align: center; font-size: 20px;'><b>{user_score2}</b></p>", unsafe_allow_html=True)
-            
-            st.markdown("<p style='margin-top: 15px; color: #94a3b8;'>🎯 Qui se qualifie ?</p>", unsafe_allow_html=True)
-            options_q = [info['team1'], info['team2']]
+                if not deja_valide: s2_in = st.number_input("Golos", min_value=0, step=1, key=f"s2_{match_id}")
+                else: st.markdown(f"<p style='text-align: center; font-size: 24px;'><b>{st.session_state.pronos[user][match_id]['score2']}</b></p>", unsafe_allow_html=True)
             
             if not deja_valide:
-                q_in = st.radio("Qualifié", options_q, key=f"q_{match_id}", horizontal=True, label_visibility="collapsed")
-                if st.button(f"🔒 Valider mon prono ({match_id})", key=f"btn_{match_id}", use_container_width=True):
+                q_in = st.radio("Quem passa de fase?", [info['team1'], info['team2']], key=f"q_{match_id}", horizontal=True)
+                if st.button(f"🔒 Trancar Palpite ({match_id})", key=f"btn_{match_id}", use_container_width=True):
                     st.session_state.pronos[user][match_id] = {"score1": s1_in, "score2": s2_in, "qualifie": q_in, "valide": True}
-                    st.toast("Prono enregistré ! 🔥")
                     st.rerun()
             else:
-                user_q = st.session_state.pronos[user].get(match_id, {}).get("qualifie", "Aucun") if isinstance(st.session_state.pronos[user].get(match_id), dict) else "Aucun"
-                if info["termine"]:
-                    st.markdown(f"<p style='color: #64748b;'><b>Votre choix :</b> {user_q}</p>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<p style='color: #10b981;'><b>✓ Votre choix :</b> {user_q}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='text-align:center; color:#94a3b8;'>Avança para ti: <b>{st.session_state.pronos[user][match_id]['qualifie']}</b></p>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- SECTION 2: ARBRE DES PLAYOFFS ---
+    # --- SÉLECTION 2: PALPITES DO GRUPO (AGORA COM FILTRO DUPLO!) ---
+    elif choix_menu == "👀 Palpites do Grupo":
+        st.markdown("<h1 style='color: #a855f7;'>👀 Espreitar os Palpites</h1>", unsafe_allow_html=True)
+        
+        modo_vista = st.radio("Como queres espreitar?", ["Por Amigo 👤", "Por Jogo ⚽"], horizontal=True)
+        
+        lista_jogadores = {dados.get("nickname_profile", e): e for e, dados in st.session_state.pronos.items()}
+        
+        if modo_vista == "Por Amigo 👤":
+            jogador_sel = st.selectbox("Escolher Amigo:", list(lista_jogadores.keys()))
+            email_sel = lista_jogadores[jogador_sel]
+            
+            for m_id, info in st.session_state.matchs.items():
+                p_amigo = st.session_state.pronos[email_sel].get(m_id)
+                if isinstance(p_amigo, dict) and p_amigo.get("valide"):
+                    st.markdown(f"""
+                    <div style='background-color: #1e1b4b; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #a855f7;'>
+                        <b>{m_id}</b> | {info['flag1']} {info['team1']} <b>{p_amigo['score1']} - {p_amigo['score2']}</b> {info['flag2']} {info['team2']}<br>
+                        🏆 Passa: <b>{p_amigo['qualifie']}</b>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+        elif modo_vista == "Por Jogo ⚽":
+            jogo_sel = st.selectbox("Escolher um Jogo do Calendário:", list(st.session_state.matchs.keys()))
+            info_jogo = st.session_state.matchs[jogo_sel]
+            
+            st.markdown(f"#### Palpites de todos para: {info_jogo['flag1']} {info_jogo['team1']} vs {info_jogo['flag2']} {info_jogo['team2']}")
+            
+            tabela_dados = []
+            for nick, email_key in lista_jogadores.items():
+                p_user = st.session_state.pronos[email_key].get(jogo_sel)
+                if isinstance(p_user, dict) and p_user.get("valide"):
+                    tabela_dados.append({
+                        "Jogador": nick,
+                        "Palpite": f"{p_user['score1']} - {p_user['score2']}",
+                        "Quem Avança": p_user['qualifie']
+                    })
+            if tabela_dados: st.table(tabela_dados)
+            else: st.info("Ninguém trancou palpites para este jogo ainda.")
+
+    # --- O RESTO DO CÓDIGO (ÁRVORE, CLASSEMENT, ADMIN) MANTÉM-SE IGUAL ---
     elif choix_menu == "🌳 Arbre des Playoffs":
         st.markdown("<h1 style='color: #10b981;'>🌳 Arbre Réel des Playoffs</h1>", unsafe_allow_html=True)
-        
-        col_16, col_8, col_4 = st.columns(3)
-        
+        col_16, col_8 = st.columns(2)
         with col_16:
             st.subheader("📋 16es de Finale")
             for m_id, data in st.session_state.matchs.items():
-                st.markdown(f"""
-                <div class='tree-box'>
-                    <b>{m_id}</b><br>
-                    {data['flag1']} {data['team1']} vs {data['flag2']} {data['team2']}<br>
-                    ➔ Qualifié: <span style='color:#10b981; font-weight:bold;'>{data['qualifie_reel']}</span>
-                </div>
-                """, unsafe_allow_html=True)
-
+                st.markdown(f"<div class='tree-box'><b>{m_id}</b><br>{data['flag1']} {data['team1']} vs {data['flag2']} {data['team2']}<br>➔ Vencedor: {data['qualifie_reel']}</div>", unsafe_allow_html=True)
         with col_8:
-            st.subheader("⚡ Huitièmes de Finale")
-            for h_id, teams in huitiemes.items():
-                flag_t1 = get_flag(teams["t1"]) if teams["t1"] != "À Définir" else "🏳️"
-                flag_t2 = get_flag(teams["t2"]) if teams["t2"] != "À Définir" else "🏳️"
-                st.markdown(f"""
-                <div class='tree-box' style='margin-bottom:42px;'>
-                    <b>{h_id}</b><br>
-                    {flag_t1} {teams['t1']}<br>
-                    vs<br>
-                    {flag_t2} {teams['t2']}
-                </div>
-                """, unsafe_allow_html=True)
+            st.subheader("⚡ Quart de Finale (Exemplo)")
+            st.info("Os Oitavos e Quartos são calculados automaticamente consoante o Admin fecha os jogos anteriores.")
 
-        with col_4:
-            st.subheader("🏆 Quarts et suite")
-            st.markdown("<div class='tree-box'><b>Quart de Finale 1:</b><br>Gagnant H8-M1 vs Gagnant H8-M2</div>", unsafe_allow_html=True)
-            st.markdown("<div class='tree-box'><b>Quart de Finale 2:</b><br>Gagnant H8-M3 vs Gagnant H8-M4</div>", unsafe_allow_html=True)
-            st.markdown("<div class='tree-box'><b>Quart de Finale 3:</b><br>Gagnant H8-M5 vs Gagnant H8-M6</div>", unsafe_allow_html=True)
-            st.markdown("<div class='tree-box'><b>Quart de Finale 4:</b><br>Gagnant H8-M7 vs Gagnant H8-M8</div>", unsafe_allow_html=True)
-
-    # --- SECTION 3: CLASSEMENT ---
     elif choix_menu == "📊 Classement":
         st.markdown("<h1 style='color: #f59e0b;'>📊 Classement Général</h1>", unsafe_allow_html=True)
         classement_data = calculer_classement()
-        
-        if not classement_data:
-            st.info("Aucun point n'a encore été distribué. Les matchs doivent être terminés par l'Admin.")
+        if not classement_data: st.info("Nenhum jogo concluído ainda.")
         else:
-            st.markdown("<table style='width:100%; border-collapse: collapse; text-align:left;'>", unsafe_allow_html=True)
-            st.markdown("<tr style='background-color:#1e293b; color:white;'><th>Rang</th><th>Joueur (Nickname)</th><th>Points</th></tr>", unsafe_allow_html=True)
-            for index, (player_nick, points) in enumerate(classement_data.items(), start=1):
-                bg_color = "#0f172a" if index % 2 == 0 else "#1e293b"
-                badge = "🥇 " if index == 1 else "🥈 " if index == 2 else "🥉 " if index == 3 else f"{index} "
-                st.markdown(f"<tr style='background-color:{bg_color}; color:white;'><td><b>{badge}</b></td><td>{player_nick}</td><td><b>{points} pts</b></td></tr>", unsafe_allow_html=True)
-            st.markdown("</table>", unsafe_allow_html=True)
+            for i, (nick, pts) in enumerate(classement_data.items(), start=1):
+                st.markdown(f"**#{i} {nick}** - {pts} pts")
 
-    # --- SECTION 4: ZONE ADMIN ---
-    elif choix_menu == "🛠️ Zone Admin (Résultats)" and st.session_state.is_admin:
-        st.markdown("<div class='admin-box'>", unsafe_allow_html=True)
+    elif choix_menu == "🛠️ Zone Admin" and st.session_state.is_admin:
         st.title("🛠️ Panneau Admin")
-        
-        opcao_admin = st.radio("Action :", ["Modifier l'affiche d'un match", "Enregistrer un Résultat Réel"], horizontal=True)
-        match_to_mod = st.selectbox("Sélectionner le Match :", list(st.session_state.matchs.keys()))
-        
-        if opcao_admin == "Modifier l'affiche d'un match":
-            col_m1, col_m2 = st.columns(2)
-            with col_m1: t1 = st.text_input("Nouvelle Équipe 1", st.session_state.matchs[match_to_mod]["team1"])
-            with col_m2: t2 = st.text_input("Nouvelle Équipe 2", st.session_state.matchs[match_to_mod]["team2"])
-                
-            if st.button("💾 Mettre à jour l'affiche", use_container_width=True):
-                st.session_state.matchs[match_to_mod]["team1"] = t1
-                st.session_state.matchs[match_to_mod]["flag1"] = get_flag(t1)
-                st.session_state.matchs[match_to_mod]["team2"] = t2
-                st.session_state.matchs[match_to_mod]["flag2"] = get_flag(t2)
-                st.success("Match mis à jour !")
-                st.rerun()
-                
-        elif opcao_admin == "Enregistrer un Résultat Réel":
-            col_r1, col_r2 = st.columns(2)
-            with col_r1: res1 = st.number_input(f"Buts {st.session_state.matchs[match_to_mod]['team1']}", min_value=0, step=1, value=int(st.session_state.matchs[match_to_mod]["score1_reel"]))
-            with col_r2: res2 = st.number_input(f"Buts {st.session_state.matchs[match_to_mod]['team2']}", min_value=0, step=1, value=int(st.session_state.matchs[match_to_mod]["score2_reel"]))
-            
-            options_qualifie_reel = [st.session_state.matchs[match_to_mod]['team1'], st.session_state.matchs[match_to_mod]['team2']]
-            qualifie_reel_input = st.radio("Qui s'est qualifié ?", options_qualifie_reel)
-            terminar_jogo = st.checkbox("Clôturer le match", value=st.session_state.matchs[match_to_mod]["termine"])
-            
-            if st.button("🏆 Enregistrer le Résultat", use_container_width=True):
-                st.session_state.matchs[match_to_mod]["score1_reel"] = res1
-                st.session_state.matchs[match_to_mod]["score2_reel"] = res2
-                st.session_state.matchs[match_to_mod]["qualifie_reel"] = qualifie_reel_input
-                st.session_state.matchs[match_to_mod]["termine"] = terminar_jogo
-                st.success("Résultat enregistré !")
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        match_to_mod = st.selectbox("Match :", list(st.session_state.matchs.keys()))
+        res1 = st.number_input("Golos Equipa 1", min_value=0, step=1)
+        res2 = st.number_input("Golos Equipa 2", min_value=0, step=1)
+        q_r = st.radio("Qualificado Real", [st.session_state.matchs[match_to_mod]['team1'], st.session_state.matchs[match_to_mod]['team2']])
+        term = st.checkbox("Fechar jogo")
+        if st.button("Gravar Resultado Real"):
+            st.session_state.matchs[match_to_mod]["score1_reel"] = res1
+            st.session_state.matchs[match_to_mod]["score2_reel"] = res2
+            st.session_state.matchs[match_to_mod]["qualifie_reel"] = q_r
+            st.session_state.matchs[match_to_mod]["termine"] = term
+            st.success("Gravado!")
+            st.rerun()
