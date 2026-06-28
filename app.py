@@ -1,82 +1,79 @@
 import streamlit as st
-import unicodedata
 
-# --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Prono Mondial - Pro Edition", page_icon="🏆", layout="wide")
+# --- CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(page_title="Prono Mondial 2026", page_icon="🏆", layout="wide")
 
-# --- STYLES VISUELS ---
+# --- ESTILOS ---
 st.markdown("""
     <style>
-    .block-container { padding-top: 1.5rem; }
-    .kpi-box { background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #4c1d95; }
-    .match-box { background-color: #1e293b; padding: 20px; border-radius: 12px; border-left: 6px solid #3b82f6; margin-bottom: 20px; }
-    .tree-box { background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; color: #e2e8f0; margin-bottom: 15px; font-size: 14px; }
-    .vs-text { font-size: 22px; font-weight: bold; color: #94a3b8; text-align: center; margin-top: 15px; }
-    .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .main { background-color: #0f172a; color: white; }
+    .stButton>button { width: 100%; border-radius: 10px; font-weight: bold; }
+    .card { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #3b82f6; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- INITIALISATION SESSION STATE ---
-if "user_authenticated" not in st.session_state:
-    st.session_state.user_authenticated = False
-    st.session_state.user_email = ""
-    st.session_state.user_nickname = ""
-    st.session_state.is_admin = False
-
+# --- DICIONÁRIO DE BANDEIRAS E SELEÇÕES ---
 def get_flag(team_name):
     drapeaux = {
-        "mexique": "🇲🇽", "bresil": "🇧🇷", "france": "🇫🇷", "angleterre": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "portugal": "🇵🇹",
-        "espagne": "🇪🇸", "allemagne": "🇩🇪", "argentine": "🇦🇷", "belgique": "🇧🇪", "croatie": "🇭🇷",
-        "pays-bas": "🇳🇱", "japon": "🇯🇵", "suisse": "🇨🇭", "uruguay": "🇺🇾", "canada": "🇨🇦",
-        "maroc": "🇲🇦", "senegal": "🇸🇳", "usa": "🇺🇸", "australie": "🇦🇺", "equateur": "🇪🇨",
-        "ghana": "🇬🇭", "tunisie": "🇹🇳", "cameroun": "🇨🇲", "pologne": "🇵🇱", "danemark": "🇩🇰",
-        "serbie": "🇷🇸", "coree du sud": "🇰🇷", "arabie saoudite": "🇸🇦", "iran": "🇮🇷", "mexico": "🇲🇽",
-        "brasil": "🇧🇷", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "germany": "🇩🇪", "argentina": "🇦🇷", "belgium": "🇧🇪"
+        "mexico": "🇲🇽", "africa do sul": "🇿🇦", "coreia do sul": "🇰🇷", "republica checa": "🇨🇿",
+        "suica": "🇨🇭", "canada": "🇨🇦", "bosnia": "🇧🇦", "qatar": "🇶🇦",
+        "brasil": "🇧🇷", "marrocos": "🇲🇦", "escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "haiti": "🇭🇹",
+        "eua": "🇺🇸", "australia": "🇦🇺", "turquia": "🇹🇷", "paraguai": "🇵🇾",
+        "alemanha": "🇩🇪", "costa do marfim": "🇨🇮", "ecuador": "🇪🇨", "curacao": "🇨🇼",
+        "paises baixos": "🇳🇱", "japao": "🇯🇵", "suecia": "🇸🇪", "tunisia": "🇹🇳",
+        "belgica": "🇧🇪", "egipto": "🇪🇬", "irao": "🇮🇷", "nova zelandia": "🇳🇿",
+        "espanha": "🇪🇸", "cabo verde": "🇨🇻", "uruguai": "🇺🇾", "arabia saudita": "🇸🇦",
+        "franca": "🇫🇷", "noruega": "🇳🇴", "senegal": "🇸🇳", "iraque": "🇮🇶",
+        "argentina": "🇦🇷", "austria": "🇦🇹", "argelia": "🇩🇿", "jordania": "🇯🇴",
+        "colombia": "🇨🇴", "portugal": "🇵🇹", "congo": "🇨🇬", "uzbequistao": "🇺🇿",
+        "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "croacia": "🇭🇷", "gana": "🇬🇭", "panama": "🇵🇦"
     }
-    return drapeaux.get(str(team_name).strip().lower(), "🏳️")
+    return drapeaux.get(team_name.lower().strip(), "🏳️")
 
-if "matchs" not in st.session_state:
-    st.session_state.matchs = {
-        "16es - Match 1": {"team1": "Allemagne", "flag1": "🇩🇪", "team2": "Paraguay", "flag2": "🇵🇾", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 2": {"team1": "France", "flag1": "🇫🇷", "team2": "Suède", "flag2": "🇸🇪", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 3": {"team1": "Afrique du Sud", "flag1": "🇿🇦", "team2": "Canada", "flag2": "🇨🇦", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 4": {"team1": "Pays-Bas", "flag1": "🇳🇱", "team2": "Maroc", "flag2": "🇲🇦", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 5": {"team1": "Brésil", "flag1": "🇧🇷", "team2": "Croatie", "flag2": "🇭🇷", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 6": {"team1": "Espagne", "flag1": "🇪🇸", "team2": "Japon", "flag2": "🇯🇵", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 7": {"team1": "USA", "flag1": "🇺🇸", "team2": "Bosnie", "flag2": "🇧🇦", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 8": {"team1": "Belgique", "flag1": "🇧🇪", "team2": "Australie", "flag2": "🇦🇺", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 9": {"team1": "Mexique", "flag1": "🇲🇽", "team2": "Équateur", "flag2": "🇪🇨", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 10": {"team1": "Côte d'Ivoire", "flag1": "🇨🇮", "team2": "Norvège", "flag2": "🇳🇴", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 11": {"team1": "Argentine", "flag1": "🇦🇷", "team2": "Cap-Vert", "flag2": "🇨🇻", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 12": {"team1": "Angleterre", "flag1": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "team2": "Égypte", "flag2": "🇪🇬", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 13": {"team1": "Suisse", "flag1": "🇨🇭", "team2": "Portugal", "flag2": "🇵🇹", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 14": {"team1": "Uruguay", "flag1": "🇺🇾", "team2": "Ghana", "flag2": "🇬🇭", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 15": {"team1": "Sénégal", "flag1": "🇸🇳", "team2": "Tunisie", "flag2": "🇹🇳", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "16es - Match 16": {"team1": "Danemark", "flag1": "🇩🇰", "team2": "Corée du Sud", "flag2": "🇰🇷", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False}
-    }
-
-if "pronos" not in st.session_state: st.session_state.pronos = {}
+# --- ESTADO DA SESSÃO ---
+if "user_authenticated" not in st.session_state:
+    st.session_state.user_authenticated = False
+    st.session_state.user_nickname = ""
 
 # --- LÓGICA DE LOGIN ---
 if not st.session_state.user_authenticated:
-    st.markdown("<h1 style='text-align: center;'>🏆 LOBBY DES PRONOSTICS</h1>", unsafe_allow_html=True)
-    email = st.text_input("Email").strip()
-    nickname = st.text_input("Nickname").strip()
-    code_salle = st.text_input("Código de Acesso", type="password")
-    
-    if st.button("🌟 Entrar", use_container_width=True):
-        if code_salle == "LoungeCDM" and email and nickname:
+    st.title("🏆 Login - Mundial 2026")
+    email = st.text_input("Email")
+    nickname = st.text_input("Nickname")
+    if st.button("Entrar no Jogo"):
+        if email and nickname:
             st.session_state.user_authenticated = True
-            st.session_state.user_email = email
             st.session_state.user_nickname = nickname
-            st.session_state.is_admin = (email.lower() == "ricardosdias32@gmail.com")
-            if email not in st.session_state.pronos: st.session_state.pronos[email] = {"nickname_profile": nickname}
             st.rerun()
-        else:
-            st.error("Código incorreto ou campos vazios.")
 else:
+    # --- INTERFACE PRINCIPAL ---
     st.sidebar.markdown(f"### 👤 {st.session_state.user_nickname}")
-    if st.sidebar.button("🚪 Logout"):
+    
+    # Botão de Desistir
+    if st.sidebar.button("⚠️ Desistir / Sair"):
         st.session_state.user_authenticated = False
         st.rerun()
-    st.write("Bem-vindo! O sistema está pronto.")
+    
+    st.title("⚽ Mundial 2026 - Painel")
+    
+    # Exemplo de listagem dos grupos conforme definiste
+    grupos = {
+        "Grupo 1": ["Mexico", "Africa do Sul", "Coreia do Sul", "Republica Checa"],
+        "Grupo 2": ["Suica", "Canada", "Bosnia", "Qatar"],
+        "Grupo 3": ["Brasil", "Marrocos", "Escocia", "Haiti"],
+        "Grupo 4": ["EUA", "Australia", "Turquia", "Paraguai"],
+        "Grupo 5": ["Alemanha", "Costa do Marfim", "Ecuador", "Curacao"],
+        "Grupo 6": ["Paises Baixos", "Japao", "Suecia", "Tunisia"],
+        "Grupo 7": ["Belgica", "Egipto", "Irao", "Nova Zelandia"],
+        "Grupo 8": ["Espanha", "Cabo Verde", "Uruguai", "Arabia Saudita"],
+        "Grupo 9": ["Franca", "Noruega", "Senegal", "Iraque"],
+        "Grupo 10": ["Argentina", "Austria", "Argelia", "Jordania"],
+        "Grupo 11": ["Colombia", "Portugal", "Congo", "Uzbequistao"],
+        "Grupo 12": ["Inglaterra", "Croacia", "Gana", "Panama"]
+    }
+    
+    for nome_grupo, equipas in grupos.items():
+        with st.expander(f"🔹 {nome_grupo}"):
+            cols = st.columns(4)
+            for i, equipa in enumerate(equipas):
+                cols[i].markdown(f"<div class='card'>{get_flag(equipa)} {equipa}</div>", unsafe_allow_html=True)
