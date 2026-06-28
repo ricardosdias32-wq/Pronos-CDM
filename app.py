@@ -2,67 +2,66 @@ import streamlit as st
 import unicodedata
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Prono Mondial", page_icon="🏆", layout="wide")
+st.set_page_config(page_title="Prono Mondial - Pro Edition", page_icon="🏆", layout="wide")
 
-# --- FUNÇÃO PARA CRIAR DADOS DE JOGO NOVOS ---
-def get_default_matchs():
-    return {
-        "16es - Match 1": {"team1": "Allemagne", "flag1": "🇩🇪", "team2": "Paraguay", "flag2": "🇵🇾", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        "Finale": {"team1": "À Définir", "flag1": "🏳️", "team2": "À Définir", "flag2": "🏳️", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
-        # ... (podes adicionar aqui todos os outros jogos como no modelo anterior)
-    }
+# --- STYLES VISUELS ---
+st.markdown("""
+    <style>
+    .block-container { padding-top: 1.5rem; }
+    .kpi-box { background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #4c1d95; }
+    .match-box { background-color: #1e293b; padding: 20px; border-radius: 12px; border-left: 6px solid #3b82f6; margin-bottom: 20px; }
+    .tree-box { background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; color: #e2e8f0; margin-bottom: 15px; font-size: 14px; }
+    .vs-text { font-size: 22px; font-weight: bold; color: #94a3b8; text-align: center; margin-top: 15px; }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- INITIALISATION ---
-if "rooms" not in st.session_state:
-    st.session_state.rooms = {
-        "Sala_Principal": {"matchs": get_default_matchs(), "pronos": {}},
-        "Sala_Teste": {"matchs": get_default_matchs(), "pronos": {}}
-    }
-
+# --- INITIALISATION SESSION STATE ---
 if "user_authenticated" not in st.session_state:
     st.session_state.user_authenticated = False
-    st.session_state.room_id = None
+    st.session_state.user_email = ""
+    st.session_state.user_nickname = ""
+    st.session_state.is_admin = False
+
+if "matchs" not in st.session_state:
+    st.session_state.matchs = {
+        "16es - Match 1": {"team1": "Allemagne", "flag1": "🇩🇪", "team2": "Paraguay", "flag2": "🇵🇾", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
+        "16es - Match 2": {"team1": "France", "flag1": "🇫🇷", "team2": "Suède", "flag2": "🇸🇪", "score1_reel": 0, "score2_reel": 0, "qualifie_reel": "À Définir", "termine": False},
+        # ... (podes manter a tua lista completa aqui)
+    }
+
+if "pronos" not in st.session_state: 
+    st.session_state.pronos = {}
+
+# --- LÓGICA DE ATUALIZAÇÃO ---
+def actualiser_arbre_dynamique():
+    m = st.session_state.matchs
+    # (Logica da árvore aqui...)
+    pass
+
+actualiser_arbre_dynamique()
 
 # --- LOGIN ---
 if not st.session_state.user_authenticated:
-    st.markdown("<h1 style='text-align: center;'>🏆 Bem-vindo ao Prono Mondial</h1>", unsafe_allow_html=True)
-    email = st.text_input("Email")
-    nickname = st.text_input("Nickname")
-    code = st.text_input("Código de Acesso", type="password")
+    st.markdown("<h1 style='text-align: center;'>🏆 LOBBY DES PRONOSTICS</h1>", unsafe_allow_html=True)
+    email = st.text_input("Email").strip()
+    nickname = st.text_input("Nickname").strip()
+    code_salle = st.text_input("Código", type="password")
     
-    if st.button("🌟 Entrar"):
-        if code == "LoungeCDM":
-            st.session_state.room_id = "Sala_Principal"
+    if st.button("Entrar"):
+        if code_salle == "LoungeCDM" and email and nickname:
             st.session_state.user_authenticated = True
-        elif code == "TesteSecreto123": # O TEU CÓDIGO PRIVADO
-            st.session_state.room_id = "Sala_Teste"
-            st.session_state.user_authenticated = True
+            st.session_state.user_email = email
+            st.session_state.user_nickname = nickname
+            st.session_state.is_admin = (email.lower() == "ricardosdias32@gmail.com")
+            st.rerun()
         else:
-            st.error("Código incorreto.")
-            st.stop()
-        
-        st.session_state.user_email = email
-        st.session_state.user_nickname = nickname
-        st.session_state.is_admin = (email.lower() == "ricardosdias32@gmail.com")
-        st.rerun()
-
+            st.error("Dados incorretos.")
 else:
-    # --- ACESSO AOS DADOS DA SALA ---
-    room_id = st.session_state.room_id
-    # Shortcut para facilitar o código restante
-    matchs = st.session_state.rooms[room_id]["matchs"]
-    pronos = st.session_state.rooms[room_id]["pronos"]
-    
-    # Exemplo de uso:
-    st.sidebar.info(f"📍 Estás na: {room_id.replace('_', ' ')}")
-    
-    # AQUI CONTINUAS O TEU CÓDIGO NORMAL (menus, lógica, admin)
-    # Sempre que quiseres aceder aos jogos, usas a variável 'matchs'
-    # Sempre que quiseres aceder às apostas, usas a variável 'pronos'
-    
-    if st.sidebar.button("🚪 Sair"):
+    # --- INTERFACE ---
+    st.sidebar.markdown(f"### 👤 {st.session_state.user_nickname}")
+    if st.sidebar.button("Logout"):
         st.session_state.user_authenticated = False
         st.rerun()
-        
-    st.write(f"Bem-vindo {st.session_state.user_nickname}!")
-    st.write(f"Aqui podes ver e editar os jogos da **{room_id}**.")
+    
+    st.write("Bem-vindo ao sistema!")
+    # O restante do código vai aqui...
